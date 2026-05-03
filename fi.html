@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Game Over - Island Adventure</title>
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        .screen {
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        button {
+            padding: 10px 25px;
+            font-size: 16px;
+            cursor: pointer;
+            border: 1px solid #333;
+            background: white;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background: #eee;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Partida Acabada</h1>
+        
+        <p id="mensaje-muerte">Cargando causa de muerte...</p>
+
+        <div class="score-box">
+            <p>Puntuación de esta partida: <span id="puntos" class="score">0</span></p>
+            <p>Récord histórico: <span id="record" class="high-score">0</span></p>
+        </div>
+
+        <button onclick="window.location.href='inici.html'">Volver a Intentar</button>
+    </div>
+
+    <script>
+    var params = new URLSearchParams(window.location.search);
+    var scoreActual = parseInt(params.get('score')) || 0;
+    var motivo = params.get('motivo') || "Tu aventura ha terminado.";
+
+    var recordGuardado = localStorage.getItem("maxScore") || 0;
+
+    if (scoreActual > parseInt(recordGuardado)) {
+        localStorage.setItem("maxScore", scoreActual);
+        recordGuardado = scoreActual;
+    }
+
+    document.getElementById('mensaje-muerte').innerText = motivo;
+    document.getElementById('puntos').innerText = scoreActual;
+    document.getElementById('record').innerText = recordGuardado;
+    </script>
+
+</body>
+</html>

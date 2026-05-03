@@ -1,0 +1,777 @@
+<!doctype html>
+<title>The Forest of Lyrica</title>
+<link rel="stylesheet" href="Lyrica.css">
+
+<div id="stage">
+  <div id="gameContent">
+    <h1>The Forest of Lyrica</h1>
+    <img src="" width="300" height="267">
+    <p>Pren la tecla Q per la Ajuda</p>
+    <p id="statusDisplay"></p>
+    <p id="output"></p>
+  </div>
+</div>
+
+<div id="gameOver" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: black; color: red; text-align: center; padding-top: 100px; z-index: 1000;">
+    <h1>HAS MORT DE GANA</h1>
+    <p>La teva aventura al Bosc de Lyrica ha acabat.</p>
+    <button onclick="location.reload()" style="padding: 10px; cursor: pointer;">Torna a intentar-ho</button>
+</div>
+
+<div class="hud-container">
+    <div class="hud-item">🪓 F: <span id="val-fusta">0</span></div>
+    <div class="hud-item">🪨 P: <span id="val-pedra">0</span></div>
+    <div class="hud-item">🪵 Pa: <span id="val-pal">0</span></div> 
+    <div class="hud-item">🍎 Gana: <span id="val-gana">20</span></div>
+    <div class="hud-item">⛓️ Ferro: <span id="id-ferro">0</span></div>
+</div>
+
+<div id="eines-display" style="margin-top: 10px; font-size: 1.2em;">
+  <span id="icon-destral" style="opacity: 0.2;">🪓</span>
+  <span id="icon-pic" style="opacity: 0.2;">⛏️</span>
+  <span id="icon-canya" style="opacity: 0.2;">🎣</span>
+  <span id="icon-barca" style="opacity: 0.2;">⛵</span>
+</div>
+
+<div id="craftingMenu" style="display: none; position: absolute; top: 20px; left: 20px; background: white; border: 1px solid black; padding: 10px; z-index: 100;">
+    <h2>⚒️</h2>
+    <hr>
+    <div>
+      <p><strong>Destral de pedra</strong></p>
+      <small>(Necessites: 1 pedra + 1 pal)</small><br>
+      <button id="craftAxeBtn">Craftejar Destral</button>
+    </div>
+    <div>
+      <p><strong>Canya de pescar</strong></p>
+      <small>(Necessites: 2 pals)</small><br>
+      <button id="craftFishingRodBtn">Craftejar Canya</button>
+    </div>
+    <div>
+      <p><strong>Pic de pedra</strong></p>
+      <small>(1 pedra + 1 pal)</small><br>
+      <button id="craftPickaxeBtn">Craftejar Pic</button>
+    </div>
+    <div>
+        <p><strong>🧵 Vela (Teixit)</strong></p>
+        <small>(3 Pals + 1 Ferro per l'estructura)</small><br>
+        <button onclick="craftejarPeça('vela', 'pal', 3, 'ferro', 1)">Fabricar Vela</button>
+    </div> 
+    <div>
+        <p><strong>⚓ Àncora de Ferro</strong></p>
+        <small>(2 Ferros + 1 Pedra)</small><br>
+        <button onclick="craftejarPeça('ancora', 'ferro', 2, 'pedra', 1)">Fabricar Àncora</button>
+    </div>
+    <div>
+        <p><strong>🛶 Casc de Fusta</strong></p>
+        <small>(5 Fustes + 1 Ferro per claus)</small><br>
+        <button onclick="craftejarPeça('casc', 'fusta', 5, 'ferro', 1)">Fabricar Casc</button>
+    </div>
+    <div>
+        <p><strong>⛵ Barca Final</strong></p>
+        <small>(Necessites: Vela + Àncora + Casc)</small><br>
+        <button id="craftBoatBtn">Muntar Barca</button>
+    </div>
+    
+    <button onclick="tancarCrafting()">Sortir</button>
+    
+</div>
+<style>
+  /* Lyrica.css */
+
+/* Configuració general del cos */
+body {
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0;
+    padding: 20px;
+}
+
+/* Contenidor principal del joc */
+#stage {
+    background-color: #2d2d2d;
+    border: 4px solid #4a4a4a;
+    border-radius: 10px;
+    padding: 20px;
+    width: 350px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    text-align: center;
+}
+
+h1 {
+    color: #4caf50;
+    font-size: 1.5em;
+    margin-top: 0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* Imatge de la zona */
+img {
+    border: 3px solid #555;
+    border-radius: 5px;
+    background-color: #000;
+    margin-bottom: 15px;
+}
+
+/* Textos de sortida i estat */
+#statusDisplay {
+    background: #3d3d3d;
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    border-left: 4px solid #4caf50;
+}
+
+#output {
+    min-height: 80px;
+    font-size: 0.95em;
+    line-height: 1.4;
+    color: #dcdcdc;
+    margin-top: 10px;
+}
+
+/* Estils del HUD (Recursos) */
+.hud-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+    background: #252525;
+    padding: 10px;
+    border-radius: 8px;
+    width: 350px;
+}
+
+.hud-item {
+    background: #333;
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: 1px solid #444;
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+#val-gana {
+    color: #ff5252;
+}
+
+/* Icones d'eines (Sota el HUD) */
+#eines-display {
+    background: rgba(0,0,0,0.2);
+    padding: 10px;
+    border-radius: 50px;
+    margin-top: 10px;
+}
+
+#eines-display span {
+    margin: 0 5px;
+    transition: opacity 0.5s ease, transform 0.3s ease;
+    display: inline-block;
+}
+
+/* Menú de Crafteig */
+#craftingMenu {
+    background-color: #fff !important; /* Forcem fons blanc per llegibilitat */
+    color: #333 !important;
+    border-radius: 12px;
+    box-shadow: 0 0 50px rgba(0,0,0,0.8);
+    width: 300px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+#craftingMenu h2 {
+    margin: 10px 0;
+    color: #2d2d2d;
+}
+
+#craftingMenu div {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
+
+#craftingMenu button {
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+#craftingMenu button:hover {
+    background-color: #45a049;
+}
+
+#craftingMenu button:active {
+    transform: scale(0.95);
+}
+
+/* Pantalla de Game Over */
+#gameOver {
+    font-family: 'Courier New', Courier, monospace;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#gameOver h1 {
+    font-size: 3em;
+    text-shadow: 0 0 20px red;
+}
+
+/* Animació suau per als canvis */
+* {
+    transition: all 0.2s ease-out;
+}
+</style>
+
+<script>
+var map = []
+map[0] = "Sorrals del Nord-oest";
+map[1] = "Costa de les Concllees";
+map[2] = "Escullera del Silenci";
+map[3] = "Clarian de Cultiu";
+map[4] = "Cap del Llevant";
+map[5] = "Badia de les Roques";
+map[6] = "Arbreda de l'Obaga";
+map[7] = "Selva dels Grills";
+map[8] = "La Cova Refugi";
+map[9] = "Platja dels Vents";
+map[10] = "Ribera de l'Oest"
+map[11] = "Bosc de les Ombres"
+map[12] = "Campament de l'Impacte"
+map[13] = "Jungla Humida"
+map[14] = "Platja del Palmerar"
+map[15] = "Costa Brava de l'Oest"
+map[16] = "Bosc de Pins"
+map[17] = "L'Espessor"
+map[18] = "Sender de Falgueres"
+map[19] = "Platja de la Calma"
+map[20] = "Punta del Sud-oest"
+map[21] = "Platja de la Sorra Blanca"
+map[22] = "Platja del Esculls"
+map[23] = "Sorra dels Naufrags"
+map[24] = "Moll d'Evacuació"
+
+var images = [];
+images[0] = "0.png";
+images[1] = "1.png";
+images[2] = "2.png";
+images[3] = "3.png";
+images[4] = "4.png";
+images[5] = "5.png";
+images[6] = "6.png";
+images[7] = "7.png";
+images[8] = "8.png";
+images[9] = "9.png";
+images[10] = "10.png"
+images[11] = "11.png"
+images[12] = "12.png"
+images[13] = "13.png"
+images[14] = "14.png"
+images[15] = "16.png"
+images[16] = "17.png"
+images[17] = "15.png"
+images[18] = "18.png"
+images[19] = "19.png"
+images[20] = "20.png"
+images[21] = "21.png"
+images[22] = "22.png"
+images[23] = "23.png"
+images[24] = "24.png"
+
+
+/*
+var blockedPathMessages = [];
+blockedPathMessages[0] = "It's too dangerous to move that way.";
+blockedPathMessages[1] = "A mysterious force holds you back.";
+blockedPathMessages[2] = "A tangle of thorns blocks your way.";
+blockedPathMessages[3] = "You can't step over the dragon.";
+blockedPathMessages[4] = "";
+blockedPathMessages[5] = "The gate locks shut.";
+blockedPathMessages[6] = "The river is too deep to cross.";
+blockedPathMessages[7] = "The trees are too thick to pass.";
+blockedPathMessages[8] = "You're too scared to go to that way.";
+*/
+//items
+
+var items = ["pedra", "pedra", "pedra", "pal", "pal", "pal", "pal", "pal", "pal" ,"pal", "pal" , "pal"];
+var itemLocations = [2, 8, 22, 3, 6, 11, 16, 20, 23, 7, 15, 17];
+var itemsIknow = ["pedra", "pal", "fusta", "destral","canya", "ferro", "pic", "vela", "ancora", "casc", "barca" ];
+var item = "";
+var zonesArbres = [7, 9, 12, 13, 14, 17, 18, 19];
+var teDestral = false 
+var tePic = false
+var teCanya = false
+var teBarca = false
+var teVela = false;   
+var teAncora = false; 
+var teCasc = false;
+
+//menjar
+var gana = 20;
+
+//The items the player are carrying
+var backpack = [];
+
+//GPS Jugador
+var mapLocation = 13;
+
+//Initialize the player's input
+var playersInput = "";
+
+//Initialize the game message
+var gameMessage = "";
+
+//Actions the game understands
+var actionsIKnow = ["north", "east", "south", "west", "take", "use", "drop"];
+var action ="";
+
+//The interface fields
+var output = document.querySelector("#output");
+var image = document.querySelector("img");
+
+//___________//
+var statusDisplay = document.querySelector("#statusDisplay");
+var craftingMenu = document.querySelector("#craftingMenu");
+var craftBoatBtn = document.querySelector("#craftBoatBtn");
+var gameContent = document.querySelector("#gameContent");
+
+
+
+
+document.querySelector("#craftPickaxeBtn").addEventListener("click", function() {
+    craftejarPic();
+}, false);
+
+document.querySelector("#craftBoatBtn").addEventListener("click", function() {
+    craftejarBarcaFinal();
+}, false);
+
+document.querySelector("#craftAxeBtn").addEventListener("click", function() {
+    craftejarDestral();
+}, false);
+
+document.querySelector("#craftFishingRodBtn").addEventListener("click", function() {
+    craftejarCanya();
+}, false);
+
+window.addEventListener("keydown", keydownHandler, false);
+//___________//
+
+
+//Display the player's location
+output.innerHTML = map[mapLocation];
+
+render();
+
+
+function clickHandler()
+{
+  playGame();
+}
+
+
+//Las teclas del joc
+function keydownHandler(event) {
+  switch(event.keyCode) {
+    case 87: playGame("north"); break; // W
+    case 83: playGame("south"); break; // S
+    case 65: playGame("west");  break; // A
+    case 68: playGame("east");  break; // D
+    case 84: playGame("take");  break; // T (per agafar objectes)
+    case 85: playGame("use");   break; // U (per fer servir el objectes)
+    case 67: playGame("craft");  break; // C (crafteig)
+    case 81: playGame("ajuda"); break; // Q (Boto de Ajuda)
+  }
+}
+
+
+function playGame(command) {
+  action = command;
+  gameMessage = "";
+
+  switch(action) {
+    case "north":
+      if (mapLocation >= 5) mapLocation -= 5;
+      else gameMessage = "És perillós surtir al mar sense barca";
+      gana -= 1;
+      break;
+
+    case "east":
+      if (mapLocation % 5 != 4) mapLocation += 1;
+      else gameMessage = "És perillós surtir al mar sense barca";
+      gana -= 1;
+      break;
+
+    case "west":
+      if (mapLocation % 5 != 0) mapLocation -= 1;
+      else gameMessage = "És perillós surtir al mar sense barca";
+      gana -= 1;
+      break;
+
+    case "south":
+      if (mapLocation < 20) mapLocation += 5;
+      else gameMessage = "És perillós surtir al mar sense barca";
+      gana -= 1;
+      break;
+
+    case "take":
+      if (itemLocations.includes(mapLocation)) {
+        var index = itemLocations.indexOf(mapLocation);
+        item = items[index]; 
+        takeItem();
+      } else {
+        gameMessage = "No hi ha res per agafar aquí.";
+      }
+      break;
+
+case "use":
+      if (backpack.length > 0) {
+        if (mapLocation === 24 && backpack.includes("barca")) {
+          item = "barca";
+        } 
+        else if (zonesArbres.includes(mapLocation) && backpack.includes("destral")) {
+          item = "destral";
+        } 
+        else if (mapLocation === 8 && backpack.includes("pic")) {
+          item = "pic";
+        }
+        else if ([0, 1, 2, 4, 5, 9, 10, 14, 15, 19, 20, 21, 22, 23, 24].includes(mapLocation) && backpack.includes("canya")) {
+          item = "canya";
+        }
+        else {
+          item = backpack[0];
+        }
+        
+        useItem();
+      } else {
+        gameMessage = "No tens res a la motxilla per usar.";
+      }
+      break;
+
+    case "craft":
+      if (mapLocation === 8) {
+        abrirCrafting();
+      } else {
+        gameMessage = "Només pots fabricar objectes a la Cova Refugi (Localització 8).";
+      }
+      break;
+
+    case "ajuda":
+      ajuda(); 
+      break;
+  }
+
+  render();
+}
+
+function abrirCrafting() {
+  gameContent.style.display = "none";
+  craftingMenu.style.display = "block";
+}
+
+function ajuda(){
+gameMessage = "<strong>AJUDA DEL JOC:</strong><br>" +
+                "<strong>W, A, S, D</strong> per explorar el bosc.<br>" +
+                "<strong>T</strong> per recollir objectes.<br>" +
+                " <strong>C</strong> per fabricar (només a la Cova).<br>" +
+                "<strong>U</strong> per fer servir el que portis a sobre.";
+
+
+}
+
+
+function takeItem() {
+  var itemIndex = itemLocations.indexOf(mapLocation);
+
+  if (itemIndex !== -1) {
+    gameMessage = "Has agafat: " + items[itemIndex];
+    backpack.push(items[itemIndex]);
+    items.splice(itemIndex, 1);
+    itemLocations.splice(itemIndex, 1);
+  } else {
+    gameMessage = "No hi ha res per agafar aquí.";
+  }
+}
+
+
+function dropItem(){
+  var backpackIndexNumber = backpack.indexOf(item);
+
+  if(backpack.length !== 0)
+  {
+    if(backpackIndexNumber !== -1) {
+      items.push(backpack[backpackIndexNumber]);
+      itemLocations.push(mapLocation);
+
+      backpack.splice(backpackIndexNumber, 1);
+
+      //Only for testing purposes
+      console.log("world Items : " + items);
+      console.log("backpack items : " + backpack);
+    }
+    else
+    {
+        gameMessage = "You can't do that";
+    }
+  }
+  else{
+    gameMessage = ("You're not carrying anything.");
+  }
+}
+
+function useItem() {
+  var backpackIndexNumber = backpack.indexOf(item);
+
+  if (backpackIndexNumber === -1) {
+    gameMessage = "No portes això a sobre.";
+    return;
+  }
+
+  switch (item) {
+    case "barca":
+      if (mapLocation === 24) {
+        gameMessage = "Estàs posant la barca a l'aigua... Adeu, Lyrica!";
+        render(); 
+        setTimeout(function() {
+          window.location.href = "victoria.html"; 
+        }, 2000);
+      } else {
+        gameMessage = "Aquí no hi ha prou aigua per fer servir la barca. Ves al Moll d'Evacuació.";
+      }
+      break;
+    case "destral":
+      if (zonesArbres.includes(mapLocation)) {
+        gameMessage = "Has tallat un arbre i has aconseguit fusta!";
+        backpack.push("fusta");
+      } else {
+        gameMessage = "Aquí no hi ha arbres per tallar.";
+      }
+      break;
+
+    case "canya":
+      var zonesCosta = [0, 1, 2, 4, 5, 9, 10, 14, 15, 19, 20, 21, 22, 23];
+      if (zonesCosta.includes(mapLocation)) {
+        gana += 5;
+        if (gana > 20) gana = 20;
+        gameMessage = "Has pescat un peix! Recuperes energia.";
+      } else {
+        gameMessage = "Aquí no hi ha aigua per pescar.";
+      }
+      break;
+
+    case "pic":
+      if (mapLocation === 8) {
+        if (Math.random() > 0.7) {
+          gameMessage = "Has trobat FERRO!";
+          backpack.push("ferro");
+        } else {
+          gameMessage = "Has picat pedra comuna.";
+          backpack.push("pedra");
+        }
+      } else {
+        gameMessage = "Només pots picar a la cova.";
+      }
+      break;
+      
+    default:
+      gameMessage = "No saps com fer servir això aquí.";
+      break;
+  }
+}
+
+//___________//
+function craftejarObjecte(resultat, ingredient) {
+  var indexIngredient = backpack.indexOf(ingredient);
+
+  if (indexIngredient !== -1) {
+    backpack.splice(indexIngredient, 1);
+    backpack.push(resultat);
+    
+    gameMessage = "Has craftejat una " + resultat + "!";
+    
+    tancarCrafting();
+    render(); 
+  } else {
+    gameMessage = "No tens els materials necessaris: " + ingredient;
+    tancarCrafting();
+    render();
+  }
+}
+
+function craftejarPic() {
+    var indexPedra = backpack.indexOf("pedra");
+    var indexPal = backpack.indexOf("pal");
+
+    if (indexPedra !== -1 && indexPal !== -1) {
+        backpack.splice(indexPedra, 1);
+        backpack.splice(backpack.indexOf("pal"), 1);
+        backpack.push("pic");
+        tePic = true;
+        gameMessage = "Has fabricat un pic! Úsal a la cova per obtenir pedra.";
+        tancarCrafting();
+        render();
+    } else {
+        gameMessage = "Falta material pel pic.";
+        tancarCrafting();
+        render();
+    }
+}
+
+function craftejarCanya() {
+    var pals = backpack.filter(i => i === "pal").length;
+
+    if (pals >= 2) {
+        backpack.splice(backpack.indexOf("pal"), 1);
+        backpack.splice(backpack.indexOf("pal"), 1);
+        
+        backpack.push("canya");
+        teCanya = true;
+        gameMessage = "Has fabricat una canya! Ara pots anar a la costa a pescar.";
+        tancarCrafting();
+        render();
+    } else {
+        gameMessage = "Et falten pals (en necessites 2) per fer la canya.";
+        tancarCrafting();
+        render();
+    }
+}
+
+function craftejarDestral() {
+    var indexPedra = backpack.indexOf("pedra");
+    var indexPal = backpack.indexOf("pal");
+
+    if (indexPedra !== -1 && indexPal !== -1) {
+        backpack.splice(indexPedra, 1);
+        backpack.splice(backpack.indexOf("pal"), 1); 
+        
+        backpack.push("destral");
+        teDestral = true;
+        gameMessage = "Has fabricat una destral! Ara ja pots tallar llenya.";
+        tancarCrafting();
+        render();
+    } else {
+        gameMessage = "Et falta pedra o pal per fer la destral.";
+        tancarCrafting();
+        render();
+    }
+}
+
+function craftejarPeça(nomProducte, mat1, cant1, mat2, cant2) {
+    var stock1 = backpack.filter(i => i === mat1).length;
+    var stock2 = backpack.filter(i => i === mat2).length;
+
+    if (stock1 >= cant1 && stock2 >= cant2) {
+        for(var i=0; i<cant1; i++) {
+            backpack.splice(backpack.indexOf(mat1), 1);
+        }
+        for(var i=0; i<cant2; i++) {
+            backpack.splice(backpack.indexOf(mat2), 1);
+        }
+
+        backpack.push(nomProducte);
+        
+        if(nomProducte === 'vela') teVela = true;
+        if(nomProducte === 'ancora') teAncora = true;
+        if(nomProducte === 'casc') teCasc = true;
+
+        gameMessage = "Has fabricat: " + nomProducte.toUpperCase() + "!";
+        tancarCrafting();
+        render();
+    } else {
+        gameMessage = "Falten materials per la peça " + nomProducte;
+        tancarCrafting();
+        render();
+    }
+}
+
+function craftejarBarcaFinal() {
+    var teVelaMochila = backpack.includes("vela");
+    var teAncoraMochila = backpack.includes("ancora");
+    var teCascMochila = backpack.includes("casc");
+
+    if (teVelaMochila && teAncoraMochila && teCascMochila) {
+        backpack.splice(backpack.indexOf("vela"), 1);
+        backpack.splice(backpack.indexOf("ancora"), 1);
+        backpack.splice(backpack.indexOf("casc"), 1);
+        
+        backpack.push("barca");
+        teBarca = true;
+        gameMessage = "¡BARCA CONSTRUÏDA! Ara porta-la al Moll d'Evacuació (posició 24) i usa-la (tecla U).";        tancarCrafting();
+        render();
+    } else {
+        gameMessage = "Necessites les 3 peces (Vela, Àncora i Casc) a la motxilla.";
+        tancarCrafting();
+        render();
+    }
+}
+
+function tancarCrafting() {
+  gameContent.style.display = "block";  // MOSTRA el joc de nou
+  craftingMenu.style.display = "none";  // AMAGA el crafteig
+}
+
+function actualizarHUD() {
+    var countFusta = backpack.filter(i => i === "fusta").length;
+    var countPedra = backpack.filter(i => i === "pedra").length;
+    var countPal = backpack.filter(i => i === "pal").length;
+    var countFerro = backpack.filter(i => i === "ferro").length;
+
+
+    document.querySelector("#val-fusta").innerText = countFusta;
+    document.querySelector("#val-pedra").innerText = countPedra;
+    document.querySelector("#val-pal").innerText = countPal;
+    document.querySelector("#val-gana").innerText = gana;
+    document.querySelector("#id-ferro").innerText = countFerro;
+
+    document.querySelector("#icon-destral").style.opacity = teDestral ? "1" : "0.2";
+    document.querySelector("#icon-pic").style.opacity = tePic ? "1" : "0.2";
+    document.querySelector("#icon-canya").style.opacity = teCanya ? "1" : "0.2";
+    document.querySelector("#icon-barca").style.opacity = teBarca ? "1" : "0.2";
+
+    if(teVela && teAncora && teCasc && !teBarca) {
+        gameMessage = "Tens totes les peces! Vés a la cova i munta la barca!";
+    }
+
+}
+//___________//
+
+function render() {
+  
+  if (gana <= 0) {
+    gana = 0; 
+    document.querySelector("#val-gana").innerText = 0;
+    document.querySelector("#gameOver").style.display = "block";
+    window.removeEventListener("keydown", keydownHandler, false);
+    return;
+  }
+
+  statusDisplay.innerHTML = "Estàs a: <strong>" + map[mapLocation] + "</strong>";
+  image.src = "images/" + images[mapLocation];
+
+  output.innerHTML = "";
+
+var objectesText = "";
+for (var i = 0; i < itemLocations.length; i++) {
+    if (mapLocation === itemLocations[i]) {
+        objectesText += "Veus un/a <strong>" + items[i] + "</strong> a terra. ";
+    }
+}
+
+  output.innerHTML = objectesText;
+  output.innerHTML += "<br><br><em>" + gameMessage + "</em>";
+
+  actualizarHUD();
+}
+</script>

@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<title>Island Adventure</title>
+<body>
+<div id="shop" class="shop-container">
+    <div class="shop-content">
+        <h2 class="shop-title">ILLA DE SUMINISTRES</h2>
+        
+        <p id="shopText" class="shop-message"></p>
+
+        <div class="shop-actions">
+            <button class="btn-shop btn-buy" onclick="buyFood()">COMPRAR</button>
+            <button class="btn-shop btn-cancel" onclick="closeShop()">CERRAR</button>
+        </div>
+    </div>
+</div>
+<div id="pirateGame" class="shop-containerp" style="display:none">
+    <div class="shop-content" style="background: rgba(44, 24, 16, 0.95); border: 4px solid #cd7f32;">
+        <h2 style="color: #ff4500; text-shadow: 2px 2px #000;">🎲 DUELO DE DADOS</h2>
+        
+        <div class="dice-arena">
+            <div class="dice-box">
+                <small>TU BARCO</small>
+                <div id="playerDie" class="die">?</div>
+            </div>
+            <div class="vs-badge">VS</div>
+            <div class="dice-box">
+                <small>PIRATA</small>
+                <div id="pirateDie" class="die">?</div>
+            </div>
+        </div>
+
+        <p id="pirateText" style="font-style: italic; margin-top: 15px;">¡Lanza los dados para defender tu botín!</p>
+        
+        <div id="pirateControls">
+            <button class="btn-shop" style="background: #b8860b; width: 200px;" onclick="lanzarDados()">LANZAR DADOS 🎲</button>
+        </div>
+    </div>
+</div>
+<div id="vitaminShop" class="shop-containerv"> 
+    <div class="shop-content">
+        <h2 class="shop-title">Botica del Puerto</h2>
+        <p id="vitaminText" class="shop-message"></p>
+            <div class="shop-actions">
+                <button class="btn-shop btn-buy" onclick="buyVitamins()">Comprar</button>
+                <button class="btn-shop btn-cancel" onclick="closeVitaminShop()">Cerrar</button>
+            </div>
+    </div>
+</div>
+
+</body>
+
+<style>
+
+    body {
+        background-image: url("images/co.png");
+    }
+    #stage {
+        position: relative;
+        width: 510px; 
+        height: 510px; 
+        background-image: url("images/fon.jpg");
+        overflow: hidden; /* Oculta el resto del mapa de 20x20 */
+        margin: 0 auto;
+        border: 4px solid #333;
+    }
+
+    .cell {
+        display: block;
+        position: absolute;
+        width: 64px;
+        height: 64px;
+    }
+
+#output {
+    position: fixed;
+    top: 550px;
+    left: 50%;
+    transform: translateX(-50%);
+
+    width: 450px;
+    max-width: 90%;
+
+    padding: 12px 20px;
+
+    background: rgba(20, 20, 20, 0.85);
+    color: #f5e6c8;
+
+    border: 3px solid #c89b3c;
+    border-radius: 10px;
+
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    text-align: center;
+
+    box-shadow: 0 0 15px rgba(0,0,0,0.8);
+
+    z-index: 500;
+}
+p
+{
+    width: 400px;
+}
+.shop-container {
+    background-image: url("images/illla.png"); 
+    background-size: cover;       
+    background-position: center;  
+    background-repeat: no-repeat;
+
+
+
+    display: none;
+    position: fixed;
+    inset: 0;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.shop-containerv {
+    background-image: url("images/VC.png"); 
+    background-size: cover;       
+    background-position: center;  
+    background-repeat: no-repeat;
+
+
+
+    display: none;
+    position: fixed;
+    inset: 0;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+.shop-containerp {
+    background-image: url("images/AC.png"); 
+    background-size: cover;       
+    background-position: center;  
+    background-repeat: no-repeat;
+
+
+
+    display: none;
+    position: fixed;
+    inset: 0;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.shop-content {
+    background: rgba(62, 39, 35, 0.9); 
+    border: 4px solid #ffd700;
+    padding: 30px;
+
+    width: 320px; 
+    min-height: 200px;
+    
+    display: flex;
+    flex-direction: column;
+    align-items: center;    
+    justify-content: center; 
+    
+    text-align: center;
+    box-shadow: 0 0 20px rgba(0,0,0,0.7);
+    color: #fff;
+    border-radius: 15px;
+}
+
+.shop-title {
+    margin-top: 0;
+    color: #ffd700;
+    font-size: 1.2rem;
+    text-shadow: 2px 2px #000;
+}
+
+.shop-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.btn-shop {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    color: white;
+    border-radius: 5px;
+}
+
+
+.btn-buy { background: #2e7d32; }
+.btn-cancel { background: #c62828; }
+</style>
+
+<div id="stage"></div>
+<p id="output"></p>
+
+<script>
+
+var stage = document.querySelector("#stage");
+var output = document.querySelector("#output");
+var shop = document.getElementById("shop");
+var shopText = document.getElementById("shopText");
+
+//Add a keyboard listener
+window.addEventListener("keydown", keydownHandler, false);
+
+//The game map
+var map = [
+    [0, 2, 0, 1, 0, 0, 6, 0, 0, 0, 2, 0, 0, 1, 0, 0, 0, 0, 2, 3],
+    [0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0],
+    [0, 0, 0, 0, 6, 0, 0, 1, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1, 0, 0],
+    [0, 1, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+    [0, 0, 0, 6, 0, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 2, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1, 0],
+    [0, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 6, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 2, 0],
+    [0, 0, 6, 0, 2, 0, 0, 0, 1, 0, 0, 6, 0, 0, 2, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 6, 0, 0, 1, 0, 0],
+    [0, 6, 0, 0, 1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 2, 0, 0, 6, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 2, 0, 0],
+    [0, 0, 0, 1, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0],
+    [0, 2, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 1, 0, 0, 2, 0, 0],
+    [0, 0, 2, 0, 6, 0, 1, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 1, 0, 0, 6, 0, 0, 2, 0, 0, 1, 0, 0, 6, 0],
+    [0, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [1, 0, 0, 0, 6, 0, 0, 1, 0, 2, 0, 0, 0, 6, 0, 1, 0, 2, 0, 0],
+    [0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+    [0, 0, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0]
+];
+
+var gameObjects = [
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 5, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 5, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    [4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+];
+
+//Map Code
+var WATER = 0;
+var ISLAND = 1;
+var PIRATE = 2;
+var HOME = 3;
+var SHIP = 4;
+var MONSTER = 5;
+var VITAMIN = 6;
+
+//Arrow key codes
+ var UP = 38;
+ var DOWN = 40;
+ var RIGHT = 39;
+ var LEFT = 37;
+
+//The size of each cell
+var SIZE = 64;
+//Number of rows and columns
+var ROWS = map.length;
+var COLUMNS = map[0].length;
+
+//An automatic way of setting the ship's start position
+var shipRow;
+var shipColumn;
+var monsterRow;
+var monsterColumn;
+
+//The game variables
+var food = 200000000;
+var gold = 200000000;
+var experience = 0;
+var gameMessage = "Use the arrow keys to find your way home."
+
+var esco = 60
+
+
+if (esco === 0){
+    console.log("fi Joc")
+}
+
+
+
+function tirarDado() {
+   var resultado = Math.floor(Math.random() * 6) + 1;
+   return resultado;
+}
+
+
+for(var row = 0; row < ROWS; row++)
+{
+    for(var column = 0; column < COLUMNS; column++)
+    {
+        if(gameObjects[row][column] === SHIP){
+            shipRow = row;
+            shipColumn = column;
+        }
+        if(gameObjects[row][column] === MONSTER){
+            monsterRow = row;
+            monsterColumn = column;
+        }
+    }
+}
+
+//Tenda
+
+function openShop() {
+    stage.style.visibility = "hidden";
+    output.style.display = "none";
+    window.removeEventListener("keydown", keydownHandler, false);
+
+    shop.style.display = "flex"; 
+
+    var price = Math.ceil(Math.random() * 3) + 2; 
+    shopText.innerHTML = "¡Saludos!<br>Las provisiones cuestan<br><strong>" + price + " de oro</strong>";
+    shop.dataset.price = price;
+}
+function buyFood() {
+    var price = Number(shop.dataset.price);
+
+    if (gold >= price) {
+        gold -= price;
+        food += 5;
+        experience += 2;
+        gameMessage = "Compraste comida por " + price + " de oro.";
+    } else {
+        gameMessage = "¡No tienes suficiente oro!";
+    }
+
+    closeShop(); 
+}
+
+function closeShop() {
+    shop.style.display = "none"; 
+
+    stage.style.visibility = "visible";
+    output.style.display = "block";
+    window.addEventListener("keydown", keydownHandler, false);
+    render();
+}
+
+
+function openPirateGame() {
+    stage.style.visibility = "hidden";
+    output.style.display = "none";
+    pirateGame.style.display = "flex";
+    window.removeEventListener("keydown", keydownHandler, false);
+
+    document.getElementById("playerDie").innerHTML = "❓";
+    document.getElementById("pirateDie").innerHTML = "❓";
+    document.getElementById("pirateControls").style.display = "block";
+}
+
+function lanzarDados() {
+    var pDie = Math.floor(Math.random() * 6) + 1;
+    var iDie = Math.floor(Math.random() * 6) + 1;
+
+    document.getElementById("playerDie").innerHTML = pDie;
+    document.getElementById("pirateDie").innerHTML = iDie;
+    document.getElementById("pirateControls").style.display = "none";
+
+    if (pDie > iDie) {
+        gold += 15;
+        experience += 5;
+        gameMessage = "¡Ganaste el duelo! Conseguiste 5 de oro.";
+    } else if (pDie < iDie) {
+        gold -= 15;
+        food -= 1;
+        experience += 2;
+        gameMessage = "Perdiste el duelo. El pirata te robó 10 de oro.";
+    } else {
+        gameMessage = "Empate en alta mar. Nadie gana nada.";
+    }
+
+    setTimeout(closePirate, 700);
+}
+
+function closePirate() {
+    pirateGame.style.display = "none";
+    stage.style.visibility = "visible";
+    output.style.display = "block";
+    window.addEventListener("keydown", keydownHandler, false);
+    render();
+}
+
+///VITAMINA
+var vitaminShop = document.getElementById("vitaminShop");
+var vitaminText = document.getElementById("vitaminText");
+
+function openVitaminShop() {
+    stage.style.visibility = "hidden";
+    output.style.display = "none";
+    window.removeEventListener("keydown", keydownHandler, false);
+    vitaminShop.style.display = "flex";
+
+    var price = 5; 
+    vitaminText.innerHTML = "¡Tus marineros se ven pálidos!<br><br>Cura el escorbuto por:<br><strong>" + price + " monedas de oro</strong>";
+    vitaminShop.dataset.price = price;
+}
+
+function buyVitamins() {
+    var price = Number(vitaminShop.dataset.price);
+    
+    if (gold >= price) {
+        gold -= price;
+        
+        esco = Math.min(100, esco + 40); 
+        
+        gameMessage = "¡Vitamina C restaurada! (Máx 100) 🍊";
+    } else {
+        gameMessage = "¡No tienes suficiente oro! 💰";
+    }
+    closeVitaminShop();
+}
+
+function closeVitaminShop() {
+    vitaminShop.style.display = "none";
+    stage.style.visibility = "visible";
+    output.style.display = "block";
+    window.addEventListener("keydown", keydownHandler, false);
+    render();
+}
+
+render();
+
+function keydownHandler(event)
+{
+    switch(event.keyCode)
+    {
+        case UP:
+            if(shipRow > 0){
+                gameObjects[shipRow][shipColumn] = 0;
+                shipRow--;
+                gameObjects[shipRow][shipColumn] = SHIP;
+                food--;
+                esco -= 5;
+            }
+        break;
+
+        case DOWN:
+            if(shipRow < ROWS - 1 ){
+                gameObjects[shipRow][shipColumn] = 0;
+                shipRow++;
+                gameObjects[shipRow][shipColumn] = SHIP;
+                food--;
+                esco -= 5;
+            }
+        break;
+
+        case LEFT:
+            if(shipColumn > 0){
+                gameObjects[shipRow][shipColumn] = 0;
+                shipColumn--;
+                gameObjects[shipRow][shipColumn] = SHIP;
+                food--;
+                esco -= 5;
+            }
+        break;
+
+        case RIGHT:
+            if(shipColumn < COLUMNS - 1)
+            {
+                gameObjects[shipRow][shipColumn] = 0;
+                shipColumn++;
+                gameObjects[shipRow][shipColumn] = SHIP;
+                food--;
+                esco -= 5; 
+            }
+        break;
+    }
+
+    switch(map[shipRow][shipColumn])
+    {
+        case WATER:
+            gameMessage = "You sail the open seas."
+        break;
+
+        case PIRATE:
+            openPirateGame();
+        break;
+
+        case ISLAND:
+            openShop();
+        break;
+
+        case HOME:
+            endGame();
+        break;
+        
+        case VITAMIN:
+            openVitaminShop();
+        break;
+
+
+    }
+
+    moveMonster();
+
+    if(gameObjects[shipRow][shipColumn] === MONSTER)
+    {
+        endGame();
+    }
+    if(food <=0 || gold <=0 || esco <=0)
+    {
+        endGame();
+    }
+
+
+    render();
+}
+
+function moveMonster() {
+    var movedMonsters = [];
+
+    for (var row = 0; row < ROWS; row++) {
+        for (var column = 0; column < COLUMNS; column++) {
+            
+            if (gameObjects[row][column] === MONSTER && !movedMonsters.includes(row + "," + column)) {
+                
+                var UP = 1;
+                var DOWN = 2;
+                var LEFT = 3;
+                var RIGHT = 4;
+                var validDirections = [];
+
+                if (row > 0 && map[row - 1][column] === WATER) validDirections.push(UP);
+                if (row < ROWS - 1 && map[row + 1][column] === WATER) validDirections.push(DOWN);
+                if (column > 0 && map[row][column - 1] === WATER) validDirections.push(LEFT);
+                if (column < COLUMNS - 1 && map[row][column + 1] === WATER) validDirections.push(RIGHT);
+
+                if (validDirections.length > 0) {
+                    var randomNumber = Math.floor(Math.random() * validDirections.length);
+                    var direction = validDirections[randomNumber];
+                    
+                    var oldRow = row;
+                    var oldCol = column;
+                    var newRow = row;
+                    var newCol = column;
+
+                    switch (direction) {
+                        case UP: newRow--; break;
+                        case DOWN: newRow++; break;
+                        case LEFT: newCol--; break;
+                        case RIGHT: newCol++; break;
+                    }
+
+                    gameObjects[oldRow][oldCol] = 0;
+                    gameObjects[newRow][newCol] = MONSTER;
+                    
+                    movedMonsters.push(newRow + "," + newCol);
+                }
+            }
+        }
+    }
+}
+
+
+
+/*
+function moveMonster(){
+
+    var UP = 1;
+    var DOWN = 2;
+    var LEFT = 3;
+    var RIGHT = 4;
+
+    var validDirections = [];
+
+    var direction = undefined;
+
+    if(monsterRow > 0)
+    {
+        var thingAbove = map[monsterRow - 1][monsterColumn];
+        if (thingAbove === WATER) validDirections.push(UP); 
+    }
+    if(monsterRow < ROWS -1)
+    {
+        var thingBelow = map[monsterRow + 1][monsterColumn];
+        if (thingBelow === WATER) validDirections.push(DOWN); 
+    }
+     if(monsterColumn > 0)
+    {
+        var thingToTheLeft = map[monsterRow][monsterColumn - 1];
+        if (thingToTheLeft === WATER) validDirections.push(LEFT); 
+    }
+     if(monsterColumn < COLUMNS - 1)
+    {
+        var thingToTheRight = map[monsterRow][monsterColumn + 1];
+        if (thingToTheRight === WATER) validDirections.push(RIGHT); 
+    }
+
+    var randomNumber = Math.floor(Math.random() * validDirections.length);
+    direction = validDirections[randomNumber];
+
+    gameObjects[monsterRow][monsterColumn] = 0;
+
+    switch(direction)
+    {
+        case UP:
+            //monsterRow--;
+            gameObjects[--monsterRow][monsterColumn] = MONSTER;
+        break;
+
+        case DOWN:
+            //monsterRow++;
+            gameObjects[++monsterRow][monsterColumn] = MONSTER;
+        break;
+
+        case LEFT:
+            //monsterColumn--;
+            gameObjects[monsterRow][--monsterColumn] = MONSTER;
+        break;
+
+        case RIGHT:
+            //monsterColumn++;
+            gameObjects[monsterRow][++monsterColumn] = MONSTER;
+        break;
+    }
+
+    if (event.keyCode === 77) { // Tecla M
+    window.location.href = "inici.html";
+}
+
+}*/
+
+/*
+function fight(){
+    var shipStrength = Math.ceil((food + gold) / 2);
+
+    var pirateStrength = Math.ceil(Math.random() * shipStrength * 2);
+
+    var valorDeLaTirada = tirarDado();
+    console.log(valorDeLaTirada)
+
+    if(pirateStrength > valorDeLaTirada)
+    {
+        var stolenGold = Math.round(pirateStrength / 2);
+        gold -= stolenGold;
+
+        experience += 1;
+
+        gameMessage = "You fight and LOSE " + stolenGold + " gold pieces."
+          + " Ship's strength: " + shipStrength
+          + " Pirate strength: " + pirateStrength;
+    }   
+    else
+    {
+        var pirateGold = Math.round(pirateStrength / 2);
+        gold += pirateGold;
+
+        experience += 2;
+
+        gameMessage = "You fight and WIN " + pirateGold + " gold pieces."
+          + " Ship's strength: " + shipStrength
+          + " Pirate strength: " + pirateStrength;
+    }
+}
+*/
+/*
+function trade(){
+    //Figure out how much food the island have and the cost
+    var islandFood = experience + gold;
+    var cost = Math.ceil(Math.random() * islandFood);
+    
+    var valorDeLaTirada = tirarDado();
+    console.log(valorDeLaTirada)
+    //Let the player buy food if there's enough gold
+    if (gold > valorDeLaTirada)
+    {
+        food += islandFood;
+        gold -= cost;
+        experience += 2;
+
+        gameMessage = "you buy " + islandFood + " coconuts"
+           + " for " + cost + " gold pieces."
+    }
+    else
+    {   //Tell the player if he does not have enough gold
+        experience += 1;
+        gameMessage = "You don't have enough gold to buy food."
+    }
+}
+    */
+
+function endGame() {
+    window.removeEventListener("keydown", keydownHandler, false);
+
+    var motivo = "";
+    var destino = "fi.html"; // Por defecto va a la pantalla de fin
+
+    if (map[shipRow][shipColumn] === HOME) {
+        motivo = "¡Has llegado a casa a salvo!";
+        destino = "animaciohome.html"; // Si gana, va a la animación especial
+    } 
+    else if (gameObjects[shipRow][shipColumn] === MONSTER) {
+        motivo = "¡Tu barco ha sido devorado por un monstruo marino!";
+    } 
+    else if (gold <= 0) {
+        motivo = "¡Te has quedado sin oro y la tripulación te ha tirado al mar!";
+    } 
+    else if (food <= 0) {
+        motivo = "¡Te has quedado sin comida y has muerto de hambre!";
+    } 
+    else if (esco <= 0) {
+        motivo = "¡La tripulación tiene escorbuto por falta de Vitamina C!";
+    }
+
+    var recordActual = localStorage.getItem("maxScore") || 0;
+    if (experience > recordActual) {
+        localStorage.setItem("maxScore", experience);
+    }
+    window.location.href = destino + "?motivo=" + encodeURIComponent(motivo) + "&score=" + experience;
+}
+
+function render()
+{
+    //Clear the stage of img tag cells from the previous turn
+    if(stage.hasChildNodes())
+    {
+        for (var i=0; i < ROWS * COLUMNS; i++)
+        {
+            stage.removeChild(stage.firstChild);
+        }
+    }   
+
+    console.log(esco)
+
+    //Render the game by looping through the map arrays
+    for(var row = 0; row < ROWS; row++)
+    {
+        for(var column = 0; column < COLUMNS; column++)
+            {
+                var cell = document.createElement("img");
+                //Set its CSS class to "cell"
+                cell.setAttribute("class", "cell");
+                stage.appendChild(cell);
+
+                switch(map[row][column])
+                { 
+                    case WATER:
+                        cell.src = "images/water.png";
+                        break;
+                    case ISLAND:
+                        cell.src = "images/island.png";
+                        break;
+                    case PIRATE:
+                        cell.src = "images/pirate.png";
+                        break;
+                    case HOME:
+                        cell.src = "images/home.png";
+                        break;
+                    case VITAMIN:
+                        cell.src = "images/esco.png";
+                    break;
+                }
+                switch(gameObjects[row][column])
+                { 
+                    case SHIP:
+                        cell.src = "images/ship.png";
+                        break;
+                    case MONSTER:
+                        cell.src = "images/monster.png";
+                        break;
+                }
+
+                //Position the cell
+                cell.style.top = row * SIZE + "px";
+                cell.style.left = column * SIZE + "px";
+            }
+    } 
+
+    var scrollX = (shipColumn * SIZE) - (320 - (SIZE / 2));
+    var scrollY = (shipRow * SIZE) - (320 - (SIZE / 2));
+
+    stage.scrollLeft = scrollX;
+    stage.scrollTop = scrollY;
+
+
+    // Display the game gameMessage
+    output.innerHTML = gameMessage;
+
+    //Display the playter's food, gold aand experience
+    output.innerHTML += "<br>🪙: " + gold + ", 🍗: "
+        + food + ", 🍊: " + esco + "/100" + "<br>" + "<br>✨: " + experience
+
+}
+
+
+
+
+</script>

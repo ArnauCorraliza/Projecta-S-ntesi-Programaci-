@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <title>L'ILLA DEL MONSTRE - FIBRA LIMITADA</title>
+    <style>
+        body { background: #1a1a1a; color: #eee; font-family: sans-serif; text-align: center; margin: 0; padding: 20px; }
+        #stage { width: 550px; margin: 0 auto; background: #333; padding: 20px; border-radius: 15px; border: 4px solid #444; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        #gameImage { 
+            width: 350px; height: 180px; background: #222; margin: 0 auto 15px; 
+            border: 5px solid #000; border-radius: 8px; display: flex; 
+            align-items: center; justify-content: center; font-weight: bold; color: #444;
+        }
+        #output { min-height: 80px; font-size: 1.1em; color: #ffcc00; margin: 10px 0; border-bottom: 1px solid #555; padding-bottom: 10px; }
+        #local-info { color: #5cb85c; font-weight: bold; margin-bottom: 10px; height: 25px; font-size: 1.2em; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; background: #222; padding: 15px; border-radius: 10px; margin-top: 10px; }
+        .res-item { font-size: 0.9em; }
+        #ganaBar { width: 100%; background: #444; height: 15px; border-radius: 10px; overflow: hidden; margin: 10px 0; }
+        #ganaFill { width: 100%; height: 100%; background: #28a745; transition: width 0.3s; }
+        #craftingMenu {
+            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95); color: white; padding: 25px; border: 4px solid #ffcc00; z-index: 100; border-radius: 20px; width: 420px;
+        }
+        .recipe { background: #444; padding: 10px; margin-bottom: 8px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .recipe button { background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        .recipe button:disabled { background: #555; }
+        .close-btn { background: #dc3545; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; margin-top: 10px; width: 100%; }
+    </style>
+</head>
+<body>
+
+<div id="stage">
+    <h1>🏝️ SUPERVIVÈNCIA EXTREMA</h1>
+    <div id="gameImage">VISTA DE L'ILLA</div>
+    <div id="local-info"></div>
+    <p id="output"></p>
+    <div id="ganaBar"><div id="ganaFill"></div></div>
+    
+    <div class="stats-grid">
+        <div class="res-item">🪓 F: <span id="fustaVal">0</span>/<span id="fMax">10</span></div>
+        <div class="res-item">🪨 P: <span id="pedraVal">0</span>/<span id="pMax">6</span></div>
+        <div class="res-item">⛓️ Fe: <span id="ferroVal">0</span></div>
+        <div class="res-item">🧶 Fibra: <span id="fibraVal">0</span>/<span id="fibMax">10</span></div>
+        <div class="res-item">🍎 Gana: <span id="ganaText">100%</span></div>
+        <div>⏰ <span id="tempsVal">☀️ DIA</span></div>
+    </div>
+
+    <p id="inventoryOutput">Equipament: Cap</p>
+</div>
+
+<div id="craftingMenu">
+    <h2>🛠️ TAULA DE TREBALL</h2>
+    <div class="recipe"><p>🔱 Llança (2 F, 2 Fibra)</p><button onclick="craft('llança')" id="btn-llança">Fabricar</button></div>
+    <div class="recipe"><p>🪓 Destral (5 F, 2 P)</p><button onclick="craft('destral')" id="btn-destral">Fabricar</button></div>
+    <div class="recipe"><p>⛏️ Pic (4 F, 4 P)</p><button onclick="craft('pic')" id="btn-pic">Fabricar</button></div>
+    <hr>
+    <div class="recipe"><p>🏗️ Estructura (80 F, 20 Fe)</p><button onclick="craft('estructura')" id="btn-estructura">Fabricar</button></div>
+    <div class="recipe"><p>⛵ Velam (40 Fibra, 20 F)</p><button onclick="craft('velam')" id="btn-velam">Fabricar</button></div>
+    <div class="recipe"><p>☸️ Timó (10 Fe, 10 P)</p><button onclick="craft('timo')" id="btn-timo">Fabricar</button></div>
+    <button class="close-btn" onclick="toggleCrafting()">Tancar (C)</button>
+</div>
+
+<script>
+var map = ["Sorrals Nord-oest", "Costa Concllees", "Escullera (Pesca)", "Clarian de Cultiu", "Cap del Llevant", "Badia de les Roques", "Arbreda de l'Obaga", "Cova Refugi (BASE)", "Selva dels Grills", "Platja dels Vents", "Ribera de l'Oest", "Bosc de les Ombres", "Campament d'Impacte", "Jungla Humida", "Platja Palmerar", "Costa Brava Oest", "Bosc de Pins", "L'Espessor", "Sender Falgueres", "Platja de la Calma", "Punta Sud-oest", "Platja Blanca", "Platja Esculls", "Sorra dels Naufrags", "Moll d'Evacuació"];
+
+var mapLocation = 12, monstreLocation = 0, gana = 100;
+var fusta = 0, pedra = 0, ferro = 0, fibra = 0;
+var fMax = 10, pMax = 6, fibMax = 10; // Límits inicials
+var covaFerroRecollit = false, backpack = [];
+var teEstructura = false, teVelam = false, teTimo = false;
+var esDeNit = false, torns = 0, menuObert = false, JocAcabat = false;
+var gameMessage = "Superviu! Limita els recursos i fabrica eines.";
+
+window.addEventListener("keydown", function(event) {
+    if (JocAcabat) return;
+    let key = event.key.toLowerCase();
+    if (menuObert && key !== 'c') return;
+    if (key === "w") moure("adalt");
+    if (key === "s") moure("abaix");
+    if (key === "a") moure("esquerra");
+    if (key === "d") moure("dreta");
+    if (key === "e") accio();
+    if (key === "c") toggleCrafting();
+});
+
+function moure(dir) {
+    let antic = mapLocation;
+    if (dir === "adalt" && mapLocation >= 5) mapLocation -= 5;
+    if (dir === "abaix" && mapLocation <= 19) mapLocation += 5;
+    if (dir === "esquerra" && mapLocation % 5 !== 0) mapLocation -= 1;
+    if (dir === "dreta" && mapLocation % 5 !== 4) mapLocation += 1;
+    if (antic !== mapLocation) {
+        gana -= 5; torns++;
+        if (torns % 7 === 0) esDeNit = !esDeNit;
+        if (esDeNit) moureMonstre();
+        gameMessage = "Ets a: " + map[mapLocation];
+        render();
+    }
+}
+
+function accio() {
+    let lloc = map[mapLocation].toLowerCase();
+    
+    // FUSTA I FIBRA
+    if (lloc.includes("bosc") || lloc.includes("jungla") || lloc.includes("arbreda") || lloc.includes("espessor")) {
+        let missatgeExtra = "";
+        
+        // Recollir Fibra (amb límit)
+        if (fibra < fibMax) {
+            fibra += (backpack.includes("destral")) ? 4 : 1;
+            missatgeExtra = " i Fibra";
+        }
+        
+        // Recollir Fusta (amb límit)
+        if (backpack.includes("destral")) {
+            if (fusta < fMax) { fusta += 10; gameMessage = "Tallant Fusta (+10)" + missatgeExtra; }
+            else { gameMessage = "Límit de fusta ple. Fibra: " + fibra; }
+        } else {
+            if (fusta < fMax) { fusta += 1; gameMessage = "Agafant branques (+1)" + missatgeExtra; }
+            else { gameMessage = "Límit de branques ple. Fibra: " + fibra; }
+        }
+    } 
+    // PEDRA
+    else if (lloc.includes("roques") || lloc.includes("escull")) {
+        if (backpack.includes("pic")) {
+            if (pedra < pMax) { pedra += 8; gameMessage = "Picant pedra (+8)."; }
+        } else {
+            if (pedra < pMax) { pedra += 1; gameMessage = "Agafant pedres (+1)."; }
+        }
+    }
+    // MENJAR
+    else if (lloc.includes("pesca") || lloc.includes("cultiu")) {
+        let atzar = Math.random();
+        if (backpack.includes("llança")) {
+            if (atzar > 0.5) { gana = Math.min(100, gana + 25); gameMessage = "🔱 Has caçat menjar!"; } 
+            else { gameMessage = "❌ Has fallat el tir."; }
+        } else {
+            if (atzar > 0.9) { gana = Math.min(100, gana + 10); gameMessage = "🍎 Has trobat fruita."; } 
+            else { gameMessage = "⚠️ Necessites una llança."; }
+        }
+    }
+    // FERRO
+    else if (lloc.includes("cova") && !covaFerroRecollit) {
+        ferro += 35; covaFerroRecollit = true; gameMessage = "Veta de ferro trobada!";
+    }
+    render();
+}
+
+function moureMonstre() {
+    if (mapLocation === 7) return; 
+    let mX = monstreLocation % 5, mY = Math.floor(monstreLocation / 5);
+    let pX = mapLocation % 5, pY = Math.floor(mapLocation / 5);
+    if (mX < pX) mX++; else if (mX > pX) mX--;
+    if (mY < pY) mY++; else if (mY > pY) mY--;
+    monstreLocation = (mY * 5) + mX;
+    if (monstreLocation === mapLocation) {
+        mapLocation = 7; gana -= 20; fusta = Math.floor(fusta * 0.8);
+        gameMessage = "⚠️ EL MONSTRE T'HA ENXAMPAT!";
+    }
+}
+
+function toggleCrafting() {
+    if (mapLocation !== 7 && !menuObert) { gameMessage = "Ves a la BASE (Cova)."; render(); return; }
+    menuObert = !menuObert;
+    document.getElementById("craftingMenu").style.display = menuObert ? "block" : "none";
+}
+
+function craft(obj) {
+    let ok = false;
+    if (obj === 'llança' && fusta >= 2 && fibra >= 2) { fusta -= 2; fibra -= 2; backpack.push("llança"); ok = true; }
+    else if (obj === 'destral' && fusta >= 5 && pedra >= 2) { fusta -= 5; pedra -= 2; backpack.push("destral"); fMax = 200; fibMax = 100; ok = true; }
+    else if (obj === 'pic' && fusta >= 4 && pedra >= 4) { fusta -= 4; pedra -= 4; backpack.push("pic"); pMax = 150; ok = true; }
+    else if (obj === 'estructura' && fusta >= 80 && ferro >= 20) { fusta -= 80; ferro -= 20; teEstructura = true; ok = true; }
+    else if (obj === 'velam' && fibra >= 40 && fusta >= 20) { fibra -= 40; fusta -= 20; teVelam = true; ok = true; }
+    else if (obj === 'timo' && ferro >= 10 && pedra >= 10) { ferro -= 10; pedra -= 10; teTimo = true; ok = true; }
+    if (ok) { gameMessage = "Fabricat: " + obj.toUpperCase(); } else { alert("Falten materials!"); }
+    render();
+}
+
+function render() {
+    document.getElementById("output").innerHTML = "<strong>" + map[mapLocation] + "</strong><br>" + gameMessage;
+    document.getElementById("fustaVal").innerHTML = fusta; document.getElementById("fMax").innerHTML = fMax;
+    document.getElementById("pedraVal").innerHTML = pedra; document.getElementById("pMax").innerHTML = pMax;
+    document.getElementById("ferroVal").innerHTML = ferro;
+    document.getElementById("fibraVal").innerHTML = fibra; document.getElementById("fibMax").innerHTML = fibMax;
+    document.getElementById("ganaText").innerHTML = gana + "%";
+    document.getElementById("ganaFill").style.width = gana + "%";
+    document.getElementById("tempsVal").innerHTML = esDeNit ? "🌙 NIT" : "☀️ DIA";
+    document.getElementById("inventoryOutput").innerHTML = "Equipament: " + (backpack.length ? backpack.join(", ") : "Cap");
+    
+    let visual = document.getElementById("gameImage");
+    if (esDeNit) {
+        visual.style.background = "#111"; visual.innerHTML = "FOSCOR";
+    } else {
+        visual.style.background = "#222"; visual.innerHTML = "VISTA ILLA";
+    }
+
+    if (gana <= 0) { document.getElementById("output").innerHTML = "MORT DE GANA."; JocAcabat = true; }
+    if (mapLocation === 24 && teEstructura && teVelam && teTimo) { document.getElementById("output").innerHTML = "GUANYES!"; JocAcabat = true; }
+}
+render();
+</script>
+</body>
+</html>
