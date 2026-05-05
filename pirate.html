@@ -283,8 +283,8 @@ var monsterRow;
 var monsterColumn;
 
 //The game variables
-var food = 200000000;
-var gold = 200000000;
+var food = 20;
+var gold = 20;
 var experience = 0;
 var gameMessage = "Use the arrow keys to find your way home."
 
@@ -378,9 +378,9 @@ function lanzarDados() {
     if (pDie > iDie) {
         gold += 15;
         experience += 5;
-        gameMessage = "¡Ganaste el duelo! Conseguiste 5 de oro.";
+        gameMessage = "¡Ganaste el duelo! Conseguiste 15 de oro.";
     } else if (pDie < iDie) {
-        gold -= 15;
+        gold -= 10;
         food -= 1;
         experience += 2;
         gameMessage = "Perdiste el duelo. El pirata te robó 10 de oro.";
@@ -702,11 +702,11 @@ function endGame() {
     window.removeEventListener("keydown", keydownHandler, false);
 
     var motivo = "";
-    var destino = "fi.html"; // Por defecto va a la pantalla de fin
+    var destino = "fi.html";
 
     if (map[shipRow][shipColumn] === HOME) {
         motivo = "¡Has llegado a casa a salvo!";
-        destino = "animaciohome.html"; // Si gana, va a la animación especial
+        destino = "animaciohome.html"; 
     } 
     else if (gameObjects[shipRow][shipColumn] === MONSTER) {
         motivo = "¡Tu barco ha sido devorado por un monstruo marino!";
